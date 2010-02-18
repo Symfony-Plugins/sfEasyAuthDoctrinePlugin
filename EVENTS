@@ -1,0 +1,33 @@
+Events
+------
+
+sfEasyAuth will notify various events during its execution. Below is a list of the events
+that it will notify, along with the event types and parameters passed.
+
+All events are in the `sf_easy_auth` namespace. Event names should be self explanatory as
+to when they events are triggered - but check the code if you need to.
+
+To get the easy auth object associated with an sfUser, use the $sfUser->getAuthUser() 
+method.
+
+Event name                            type        parameters                      Notes        
+  pre_authentication                  notify      username, password              Called before a user's username and password are checked
+  post_authentication                 notify      result                          Result is true if a username & password are valid 
+                                                                                  and the user is allowed to log in
+  filter_login_redirect_url          filter       sfUser. url                     sfUser is the sf_user that logged in, url is the
+                                                                                  url they will be redirected to. All filters must
+                                                                                  return the url, even if they don't modify it
+
+  pre_logout                          notify      sfUser                          sfUser is the sf_user to log out
+  filter_logout_redirect_url          filter      sfUser. url                     sfUser is the sf_user to log out, url is the
+                                                                                  url they will be redirected to. All filters must
+                                                                                  return the url, even if they don't modify it
+
+  pre_password_reset_message          notify      eaUser                          The sfEasyAuthUser to send a password reset email to
+  pre_password_reset_resend_message   notify      eaUser                          The sfEasyAuthUser to send a password reset email to. This event
+                                                                                  is triggered when a user clicks on an expired password reset link.
+  post_password_reset                 notify      sfUser, password                The sfUser to update the password of, and the password. This
+                                                                                  event is triggered after a user's password has been updated.
+
+  email_confirmed                     notify      eaUser                          The sfEasyAuthUser who has just confirmed their email address.
+  account_temporarily_locked          notify      eaUser                          The sfEasyAuthUser whose account has just been temporarily locked.

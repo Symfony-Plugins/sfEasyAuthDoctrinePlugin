@@ -1,0 +1,531 @@
+sfEasyAuth plugin - for Doctrine
+================================
+
+The `sfEasyAuthDoctrinePlugin` is a symfony plugin that provides simple authentication
+and authorisation. Built for high-performance environments, it only creates two 
+database tables, and supports multiple types of users through inheritance. This 
+significantly reduces the database overhead compared to sfGuardPlugin by allowing 
+default credentials to be assigned, e.g. 
+  
+  an `admin` type user will automatically acquire the `admin` credential upon logging in.
+   
+On a site with thousands of users this could represent a big efficiency, both in terms
+of execution speed and database storage savings.
+
+This plugin supports users having multiple credentials, brute force protection (with
+configurable attempt and lock-out thresholds), user profiles and a remember me feature. 
+
+Note: This is a port of sfEasyAuthPlugin that used Propel as the ORM. Any 
+      remaining references to Propel are probably erroneous.
+
+Installation
+------------
+
+  * Install the plugin
+
+        $ symfony plugin:install sfEasyAuthDoctrinePlugin
+
+  * Enable the plugin by editing your ProjectConfiguration file and
+    adding 'sfEasyAuthDoctrinePlugin' to the enablePlugins() method call.
+    
+  * Rebuild your model
+
+        $ symfony doctrine:build --all
+
+  * Enable one or more modules in your `settings.yml` (optional)
+    * For your backend application:  sfEasyAuth, sfEasyAuthUser
+    * For your frontend application: sfEasyAuth
+
+            [php]
+            all:
+              .settings:
+                enabled_modules:      [default, sfEasyAuth]
+
+  * Add the following to your `config/filters.yml` file between `security` and `cache`
+    if you want to enable the 'remember me' feature. Make sure to set your own salt in
+    the app.yml file to something random, or you'll introduce a HUGE security hole into your
+    application. The setting you MUST edit is called `remember_salt`, or `sf_easy_auth_remember_me`
+    in full (put this in your project's own app.yml file).
+  
+            [yml]
+            sf_easy_auth_remember_me:
+              class: sfEasyAuthRememberMeFilter
+
+  * Add the following to your `config/filters.yml` file between `security` and `cache`
+    if you want to allow auto-login links, want to allow users to reset their passwords
+    or want to require users to confirm their email addresses before being able to log in.
+  
+            [yml]
+            sf_easy_auth_auto_login:
+              class: sfEasyAuthAutoLoginFilter
+    
+  * Clear your cache
+
+        $ symfony cc
+
+  * Optionally create a default user (the user type is case sensitive):
+
+        $ symfony easyAuth:create-user al 5ecret1 al@example.com basicUser
+
+  * Optionally create a default admin user:
+
+        $ symfony easyAuth:create-user ally 5ecret2 ally@example.com admin
+        
+  * Optionally go through the `app.yml` file, configuring the plugin for your needs. 
+    Note: to ease your upgrade path, it may be better to redefine settings in your 
+    application or project's `app.yml` files instead of modifying the one included with
+    the plugin. 
+
+Secure your application
+-----------------------
+
+To secure a symfony application:
+
+  * Enable the module `sfEasyAuth` in `settings.yml`
+
+        [yml]
+        all:
+          .settings:
+            enabled_modules: [..., sfEasyAuth, sfEasyAuthUser]
+
+  * Change the default login and secure modules in `settings.yml`
+
+        [yml]
+        login_module:           sfEasyAuth
+        login_action:           login
+
+        secure_module:          sfEasyAuth
+        secure_action:          secure
+
+  * Change the parent class in `myUser.class.php`
+
+        [php]
+        class myUser extends sfEasyAuthSecurityUser
+        {
+        }
+
+  * Optionally customise the routes registered by the plugin. Check
+    the sfEasyAuthRouting.class.php file, and create routes with the
+    same names in your `routing.yml` file to override them.
+
+  N.B.: You must have a `@homepage` routing rule (used when a user signs out)
+
+  These routes are automatically registered by the plugin if the module `sfEasyAuth`
+  is enabled unless you defined `sf_easy_auth_plugin_routes_register` to false
+  in the `app.yml` configuration file:
+
+        [yml]
+        all:
+          sf_easy_auth_plugin:
+            routes_register: false
+
+  * Secure some modules or your entire application in `security.yml`
+
+        [yml]
+        default:
+          is_secure: on
+
+  * You're done. Now, if you try to access a secure page, you will be redirected
+    to the login page.
+    
+  * Once you're logged in, if you try to access a page that requires further credentials
+    you'll be prompted to enter another user name and password. 
+    
+Manage your users
+-----------------
+
+To be able to manage your users, `sfEasyAuthDoctrinePlugin` comes
+with a module that can be integrated in your backend application.
+This module is auto-generated thanks to the symfony admin generator.
+
+  * Follow the instructions in the 'Secure your application' section, but edit files
+    in your back-end application.
+    
+  * Edit your `security.yml` file as follows:
+  
+        [yml]
+        default:
+          is_secure: on
+          credentials: admin
+
+  * Access the module with the default route:
+
+        http://www.example.com/backend.php/sfEasyAuthUser
+
+Customize sfEasyAuth module templates
+--------------------------------------
+
+By default, `sfEasyAuth` module comes with 2 very simple templates:
+
+  * `loginSuccess.php`
+  * `secureSuccess.php`
+
+If you want to customize one of these templates:
+
+  * Create a `sfEasyAuth` module in your application (don't use the
+    `init-module` task, just create a `sfEasyAuth` directory)
+
+  * Create a template with the name of the template you want to customize in
+    the `sfEasyAuth/templates` directory
+
+  * symfony now renders your template instead of the default one
+
+Customise the forms
+-------------------
+
+sfEasyAuth also comes with some ready-made forms for common actions. There are 
+a couple of registration forms, a log-in form and one to let users reset their
+passwords. If you need to modify them, just create a subclass and change the 
+parts you need. 
+
+The registration forms will take care of enforcing that email addresses and 
+user names are unique, and that the user's password and confirmed password match.
+
+Use the log-in component
+------------------------
+
+To allow you integrate sfEasyAuth more easily into your web site, there is a
+log-in component. Simply call it from a page, and it will display a log in
+form. The action of the form will be to post to the @sf_easy_auth_login route,
+so this route must be configured to accept post data in symfony's `routing.yml` file.
+
+Customize `sfEasyAuth` module actions
+--------------------------------------
+
+If you want to customize or add methods to the sfEasyAuth:
+
+  * Create an `sfEasyAuth` module in your application
+
+  * Create an `actions.class.php` file in your `actions` directory that inherit
+    from `BasesfEasyAuthActions` (don't forget to include the `BasesfEasyAuthActions`
+    as it can't be autoloaded by symfony)
+
+        [php]
+        <?php
+
+        require_once(sfConfig::get('sf_plugins_dir').'/sfEasyAuthDoctrinePlugin/modules/sfEasyAuth/lib/BasesfEasyAuthActions.class.php');
+
+        class sfEasyAuthActions extends BasesfEasyAuthActions
+        {
+          public function executeNewAction()
+          {
+            return $this->renderText('This is a new sfEasyAuth action.');
+          }
+        }
+
+`sfEasyAuthSecurityUser` class
+---------------------------
+
+This class inherits from the `sfBasicSecurityUser` class from symfony and is
+used for the `user` object in your symfony application.
+(because you changed the `myUser` base class earlier)
+
+So, to access it, you can use the standard `$this->getUser()` in your actions
+or `$sf_user` in your templates.
+
+`sfEasyAuthSecurityUser` adds some methods:
+
+  * `logIn()` and `logOut()` methods
+  * `getAuthUser()` that returns the `sfEasyAuthUser` object
+
+For example, to get the current username:
+
+    [php]
+    $this->getUser()->getAuthUser()->getUsername()
+
+    // or via the proxy method
+    $this->getUser()->getUsername()
+
+Allow users to log in with either a user name or email address
+--------------------------------------------------------------
+
+By default users can only log in with a correct user name and password combination.
+If you'd like to allow users to be able to log in with either a user name or email
+address as well as a password, change the setting `allow_emails_as_usernames_for_login`
+to true in the `app.yml` file. This setting will not take effect if you supply your
+own authentication callable (see below).
+
+Check the user password with an external method
+-----------------------------------------------
+
+If you don't want to store the password in the database because you already
+have a LDAP server, a .htaccess file or if you store your passwords in another
+table, you can provide your own `authenticate` callable (static method or
+function) in `app.yml`:
+
+    [yml]
+    all:
+      sf_easy_auth:
+        authenticate_callable: [MyLDAPClass, checkPassword]
+
+Symfony will call your method or function to check that the supplied details
+are valid. Your function must take 2 parameters, the first
+one is the username and the second one is the password. It must return true
+or false. Here is a template for such a function:
+
+    [php]
+    function checkLDAPPassword($username, $password)
+    {
+      $user = LDAP::getUser($username);
+      if ($user->checkPassword($password))
+      {
+        return true;
+      }
+      else
+      {
+        return false;
+      }
+    }
+
+Send password reset and account activation emails with your own mailer class
+----------------------------------------------------------------------------
+
+sfEasyAuth gives you the flexibility to send emails to users however you want.
+By default it uses the sfEasyAuthSimpleMailer class which uses the PHP `mail` method for
+sending emails. This function is simple, but doesn't support more advanced features like
+sending authenticated emails - important if your messages are signed with domain keys for
+instance. 
+
+To use your own class, simply edit the `*_mailer_callable` parameters in the `app.yml` file
+as follows:
+
+    [yml]
+    password_reset_mailer_callable: YourMailClass::sendMethod
+
+The method that is set up as a callable will be invoked with 4 parameters - 
+the sfEasyAuthUser object of the recipient, the subject, the text message and the 
+html message to send. You can then deliver the message however you want. Just 
+create YourMailClass somewhere else in your project.
+
+Email confirmation
+------------------
+
+If you are allowing users to register on your site, you may decide that they must confirm
+they have access to the email address they entered while signing up. 
+
+The `require_email_confirmation` setting in the plugin's `app.yml` file will, if set to 
+a true value, prevent users from logging in to the site if they have yet to confirm their
+email address.
+
+In order to send email confirmation emails, simply put something like the following in your
+action after saving your registration:
+
+    [php]
+    // inside the register action, after saving the form and creating the new user
+    
+    // get the sfEasyAuthUser just created - you'll need to add the getNewUser method to 
+    // your form class yourself 
+    $user = $this->form->getNewUser();
+    
+    // send them an email with a link to activate their account
+    $message = $this->getPartial('sfEasyAuth/emailConfirmationEmail', array('user' => $user));
+    $user->sendEmailConfirmationMessage($message); 
+
+You can customise the email users receive by creating a new sfEasyAuth module in your 
+application, and creating a template called _emailConfirmationEmail.php. This will 
+override the default template in that case.
+
+Filters
+-------
+
+sfEasyAuthDoctrinePlugin comes with the following filter:
+
+  * sfEasyAuthAutoLoginFilter - This filter allows you to create urls that can be used to
+    automatically log users in. This could be useful when sending emails to your mailing
+    list - simply construct one of these urls, and users will be able to access secured
+    content seemlessly, without being prompted to log in.
+    
+    The format of these urls must be as follows:
+    
+      http://www.yoursite.com/any/path/here?uid=xx&alh=zzz
+      
+      * where 'xxx' is the user's user ID - this is their primary key in the sf_easy_auth_user
+        table, and
+      * 'zzz' is the user's auto_login_hash, also stored in the sf_easy_auth_user table.
+      
+    Upon being successfully logged in, users will be redirected to:
+    
+      http://www.yoursite.com/any/path/here
+      
+    The GET parameters 'uid' and 'alh' will be removed from this url, but any others will
+    be preserved.
+    
+For this filter to work, you must enable them it editing your `config/filters.yml` file
+in your application. This is described in the `installation` section.
+
+This filter is required for the password reset feature to work correctly.
+
+Adding more user types
+----------------------
+
+To add more user types, simply edit the app.yml file, adding more entries under 
+`schema_inheritance`. E.g to add an `editor` user type, simply add an entry as below:
+
+    [yml]
+    schema_inheritance:                   # Credential inheritance definition for the plugin. 
+      - admin: sfEasyAuthAdmin            # These values will be inserted into the schema. 
+      - basicUser: sfEasyAuthBasicUser    # Keys are credential names, values are authentication 
+      - editor: sfEasyAuthEditor          # classes.
+            
+Any users that are created as editors will automatically acquire the `editor` credential
+when they log in.
+        
+All users inherit from a common superclass, but a hierarchy can easily be created by 
+changing which model classes inherit from which others. Any class inheriting from any
+other sfEasyAuthUser class will automatically acquire the credentials of its parent classes,
+e.g.:
+
+    [plain]
+    super class: sfEasyAuthUser
+    class sfEasyAuthAdmin extends sfEasyAuthUser              # has credential `admin`
+    class sfEasyAuthBasicUser extends sfEasyAuthUser          # has credential `basicUser`
+    class sfEasyAuthTrustedUser extends sfEasyAuthBasicUser   # has credentials `trustedUser`
+                                                              # and `basicUser`
+                                                              
+This approach allows you to define the action associated with a credential in the model
+instead of with groups and permissions in the database. For example `basicUsers` may be 
+able to post blog comments, and `trustedUsers` may be able to edit them. Simply setting
+the credentials required in your `security.yml` file on the appropriate actions would then
+apply the restrictions, saving potentially costly database queries.
+
+User profiles
+-------------
+
+Extra data about users can be stored in a profile. As with other parts of Symfony, 
+convention is used instead of configuration. To create a profile for a user type, do
+the following:
+
+  * If your classes are prefixed by a string of characters to act as a namespace,
+    edit the `profile_prefix` plugin app constant. These characters will be used to
+    compute the name of the profile class.
+    
+  * Edit your main schema.yml file, creating an object with the same name as a user
+    type with 'Profile' at the end. 
+      e.g. if we declare an `editor` type as above and have a profile_prefix of 'my', 
+      add something similar to below to your main `schema.yml` file:
+    
+    [plain]
+    my_editor_profile:
+      id: ~
+      name: { type: varchar(200), required: true }
+      articles_edited: { type: int, default: 0 }
+      
+    When you rebuild your model, you'll have a MyEditorProfile class and peer class in 
+    your main model directory. You can retrieve the profile as follows:
+    
+    [php]
+    echo $sf_user->getAuthUser()->getProfile()->getName() . ' has edited ' . 
+      $sf_user->getAuthUser()->getProfile()->getArticlesEdited() . ' articles';
+      
+    or more simply:
+    
+    [php]
+    echo $sf_user->getProfile()->getName() . ' has edited ' . 
+      $sf_user->getProfile()->getArticlesEdited() . ' articles'; 
+      
+If you want to add more methods to the sfEasyAuthUserPeer class, it'd be better to 
+create a sub-class of it, and store your sub-class in your main lib directory somewhere.
+This will ease your upgrade path in future should you choose to. 
+
+Inheritance
+-----------
+
+To make your upgrade path as simple as possible, there is quite a complicated inheritance hierachy
+for the classes created by this plugin. It looks something like this:
+
+                                    BasesfEasyAuthUserBase*
+                                              |
+                                      sfEasyAuthUserBase*
+                                              |
+                                        sfEasyAuthUser
+                                              |
+                                    --------------------------------------------- ...
+                        sfEasyAuthAdminLocal     sfEasyAuthBasicUserLocal
+                                    |                    |
+                            sfEasyAuthAdmin*       sfEasyAuthBasicUser*
+                                      
+In the above diagram, classes with an asterisk (*) next to their names are in the plugin/sfEasyAuth/lib
+directory. You need to create the other classes manually as mentioned in the `Installation` section.
+
+This class hierarchy allows you to override methods of the various classes and customise them locally. It
+gives you a way to, for example, add methods to the sfEasyAuthUser class without touching the core
+plugin code. 
+
+Remember to clear your symfony cache after adding any new classes.                                      
+
+Events
+------
+
+sfEasyAuth notifies various events during its execution. See the file called EVENTS for more
+information on what is fired, when and parameters passed.
+
+To configure your application to listen for events, edit your application config PHP file,
+e.g. frontendConfiguration.class.php. Check the symfony documentation for more information
+on how to do this.
+
+I18n
+----
+
+All error messages in templates can use the i18n framework. To enable translation of 
+error messages in actions, make sure you enable the I18n module in your `settings.yml` file.
+Then change the value of sf_easy_auth_use_i18n to true in your `app.yml` file.
+
+Redirecting users to other pages automatically after they log in
+----------------------------------------------------------------
+
+Imagine you have a site with secure content, but you want to display previews of that content. You want 
+it so that if a user who is not logged in clicks on that content, they are prompted to register or log in.
+After they log in, you want the user to be redirected to the original content they were looking at.
+
+sfEasyAuth supports this behaviour as follows:
+
+  [php]
+  // if the user is not logged in or doesn't have the right credential
+  if (!($this->getUser()->isAuthenticated() && $this->getUser()->hasCredential('basicUser')))
+  {
+    // save the url of the page the user was trying to visit
+    $this->getUser()->setAttribute('sf_easy_auth.restricted_url', $request->getUri());
+    // prompt them to register
+    $this->redirect($this->generateUrl('user_register'));
+  }
+  
+sfEasyAuth will redirect to the page contained in the attribute sf_easy_auth.restricted_url after logging the
+user in.
+
+Troubleshooting
+---------------
+
+Symfony regenerates session IDs when users gain or lose credentials. This can result in
+multiple versions of the same cookie with different values being sent to the browser.
+Internet Explorer may have trouble with this, and fail to retain the last cookie sent.
+Additionally, Symfony also clears old sessions prior to regenerating IDs.
+
+The consequence of this implementation, and IEs mishandling of duplicate cookies, is 
+that you or users may experience problems remaining logged in to your web site. You
+may log in, the page immediately following your log in may successfully recognise the
+fact that you have logged in, but any subsequent pages will require reauthentication.
+
+To resolve this, extend whichever session storage class you are using, and override
+the 'regenerate' method so it just contains 'return true;'. Update your `factories.yml`
+file to use your new storage class.
+
+This change may make your site more vulnerable to session replay attacks since 
+sessions won't be regenerated as they would have been before. You'll have to 
+determine for yourself whether this represents an acceptable risk.
+
+Acknowledgements
+----------------
+
+Writing this plugin was made significantly easier thanks to sfGuardPlugin. Large parts of 
+this documentation come directly from the documentation for that plugin, and some code was
+based on code in that plugin too. Thanks to the developers of that plugin.
+
+TODO
+----
+
+  * Think of an easy way for admins to manage extra credentials and edit user profiles
+  * Support different password hash algorithms - MD5 or SHA1.
+  * Support user profiles for users with extra credentials that are related to those
+    extra credentials
+  * Improve i18n. Nearly there, just need to update strings in templates (submit buttons, etc)
+    and the odd error message here and there.

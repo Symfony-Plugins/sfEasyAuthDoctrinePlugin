@@ -1,0 +1,83 @@
+@CHARSET "UTF-8";
+
+body
+{
+  background-color: #eaeaea; 
+}
+
+#authContainer
+{
+  margin: 50px auto;
+  background-color: #fff;
+  color: #464646;
+  border: 1px solid #a0a0a0;
+  -moz-border-radius: 15px;
+  width: 300px;
+  padding: 30px;
+  font-size: 18px;
+  font-family: Arial
+}
+
+#authContainer input
+{
+  font-size: 21px;
+  max-width: 300px;
+  margin-bottom: 20px; 
+  padding: 3px;
+}
+
+#authContainer input[type=checkbox]
+{
+  border: 10px solid #0f0;
+} 
+
+#authContainer input[type=submit]
+{
+  margin: 0 auto;
+  display: block;
+} 
+
+#authContainer label
+{
+  margin-right: 20px;
+}
+
+#authContainer div 
+{
+  position: relative;
+}
+
+#authContainer .error, .formError
+{
+  color: #f00;
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+
+#authContainer .notice
+{
+  color: #f00;
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+#authContainer .subtle
+{
+  color: #00759F;
+  font-size: 14px;
+  text-align: right;
+  display: block;
+  position: relative;
+  top: 16px;
+}
+
+#authContainer .hidden
+{
+  display: none;
+}
+
+#pwResetForm 
+{
+  margin-top: 16px;
+}

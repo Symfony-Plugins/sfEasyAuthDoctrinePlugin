@@ -1,0 +1,34 @@
+generator:
+  class: sfDoctrineGenerator
+  param:
+    model_class:           sfEasyAuthUser
+    theme:                 admin
+    non_verbose_templates: true
+    with_show:             false
+    singular:              ~
+    plural:                ~
+    route_prefix:          sf_easy_auth_user
+    with_doctrine_route:   true
+    actions_base_class:    sfActions
+
+    config:
+      fields: 
+        password:                   { label: New password }
+        account_temporarily_locked: { label: Temporarily locked, type: boolean }
+        credentials_as_string: 		{ label: Credentials }
+        sb_user_mailing_list_list:  { label: Mailing lists }
+        sb_user_marketing_question_list:  { label: Marketing questions }
+        email:  { label: Email address }
+      list:
+        sort: [ username, asc ]
+        title:   User list
+        display: [=username, credentials_as_string, created_at, last_login, locked_by_admins, account_temporarily_locked ]
+      filter:  
+        display: [ username, email, locked_by_admins, type ]
+      form: 
+        display: [ username, password, email, email_confirmed, last_login, last_login_attempt, failed_logins, locked_by_admins, type, extra_credentials ]
+      edit:
+        title: Editing User "%%username%%"
+      new:
+        title: New User
+        display: [ username, password, enabled, type ]

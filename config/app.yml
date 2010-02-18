@@ -1,0 +1,96 @@
+all:
+  sf_easy_auth:
+    schema_inheritance:                   # Credential inheritance definition for the plugin. 
+      - sfEasyAuthAdmin                   # These values will be inserted into the schema. 
+      - sfEasyAuthMember                  # Values are authentication classes and correspond
+                                          # to credentials by doing 
+                                          # lcfirst(str_replace('sfEasyAuth', '', $className)).
+                                          # DO NOT CREATE A CLASS CALLED 'sfEasyAuthUser'
+   
+    profile_prefix: ''                    # Prefix for profile classes. Tables used for profile
+                                          # data will be formed by prepending this prefix to 
+                                          # schema_inheritance keys, with the first character
+                                          # converted to uppercase, e.g. SbBasicUser
+  
+    password_reset_mailer_callable: sfEasyAuthSimpleMailer::mail    
+      # callable to send password reset emails. It must be a static method.  It 
+      # will be invoked with the following parameters: 
+      #  * the (sfEasyAuthUser) user object of the recipient 
+      #  * the (string) subject
+      #  * the (string) text message to send
+      #  * the (string) html message to send
+  
+    email_confirmation_mailer_callable: sfEasyAuthSimpleMailer::mail
+      # callable to send email confirmation links. Parameters are as for password_reset_mailer_callable.
+      # Note: the sfEasyAuthSimpleMailer::mail doesn't currently support sending html emails
+  
+    base_url:  http://www.example.com     # base url for authentication stuff. This will be 
+                                          # used as part of the password reset link. You should
+                                          # probably override this in another app.yml file
+                                          # if you use the plugin in multiple applications
+  
+    login_attempt_threshold:  3           # number of log in attempts before being locked out
+    lockout_duration:         300         # number of seconds to lock an account 
+                                          # after %APP_SF_EASY_AUTH_LOGIN_ATTEMPT_THRESHOLD%
+                                          # attempts
+                                          
+    require_email_confirmation: true      # whether users must confirm their email address
+                                          # before being allowed to log in. See the README for
+                                          # details of how to implement this fully.  
+                                          # If a user clicks on an auto log-in link (perhaps
+                                          # because they asked to reset their password), 
+                                          # this field will automatically be confirmed.
+                                                     
+    plugin_routes_register:   true        # whether to register default routes
+                                                     
+    remember_cookie_name:     remember    # the name of the remember me cookie
+    remember_me_duration:     2592000     # number of seconds to keep the remember me cookie for
+    remember_salt:      23ij662NhyGDUW    # salt used to create remember me cookies - 
+                                          # set to a random string
+
+    use_i18n:                 false       # set this to true to allow translations on the following
+                                          # messages
+    invalid_credentials:      Invalid user name or password          # message shown when username 
+                                                                     # or password is wrong
+    insufficient_privileges:  Sorry, you don't have sufficient privileges 
+                                                      # shown if a user tries to elevate 
+                                                      # privileges, but they are insufficient
+    
+    account_locked_by_admins: Your account has been locked. Please contact us.   # displayed
+                                          # when admins have locked an account
+                                          
+    # displayed when users haven't confirmed their email address before logging in
+    must_confirm_email: | 
+      You need to confirm your email address before you can log in. If you don't 
+      have your confirmation email, please use the password reset link below.
+    
+    # displayed when a user's account is locked because of too many incorrect log in attempts
+    account_temporarily_locked: |
+      Your account has been locked due to too many incorrect log in attempts. 
+      Please try later.
+    
+    username_required_message: Please enter your user name      # displayed if users don't
+    password_required_message: Please enter your password       #  enter required fields
+    
+    password_min_length:  4               # the minimum length passwords are allowed to be
+    reset_user_not_found: We couldn't find a user with that email address  # displayed when we
+                                          # can't locate a user by their email address to reset
+                                          # their password
+    reset_user_not_found_url_token: invalidEmail      # name of a token passed in url that
+                                          # identifies that we couldn't locate a user by their
+                                          # email address. Modify this value to better conceal
+                                          # your use of this plugin.
+    reset_token_lifetime: 25200           # The length of time (in seconds) after requesting 
+                                          # to reset the password reset link set to users 
+                                          # remains valid for 
+    reset_email_subject: Reset your password        # the subject for password reset emails
+    reset_from_name:    The team          # the from name for password reset emails
+    
+    email_confirmation_subject:  Activate your account # the subject for email confirmation emails
+    email_confirmation_from_name:    The team          # the from name for email confirmation emails
+    
+    login_form_username_label: Username   # The label that will be shown next to the username field
+                                          # on the log in form.
+                                          
+    allow_emails_as_usernames_for_login: false    # Whether email addresses and user names should be
+                                                  # interchangeable during log in

@@ -1,0 +1,43 @@
+sfEasyAuthUser:
+  package: sfEasyAuthDoctrinePlugin
+  actAs: 
+    Timestampable: ~
+  columns: 
+    username:       { type: string(255), notnull: true }
+    password:       { type: string(32), notnull: true }
+    email:          { type: string(255), notnull: true }
+    email_confirmed: { type: boolean, default: 0 }
+    salt:           { type: string(32), notnull: true }
+    last_login:     { type: timestamp }
+    last_login_attempt:   { type: timestamp }
+    failed_logins:  { type: integer, default: 0 }
+    locked_by_admins:  { type: boolean, default: 0 }
+    auto_login_hash: { type: string(32) }
+    password_reset_token: { type: string(12) }
+    password_reset_token_created_at: { type: timestamp }
+    has_extra_credentials:   { type: boolean, default: 0 }
+    profile_id:  { type: integer }
+  indexes:
+    username: { fields: [ username ], type: unique }
+    email: { fields: [ email ], type: unique }
+    profile_id: { fields: [ profile_id ], type: unique }
+        
+sfEasyAuthAdmin:
+  package: sfEasyAuthDoctrinePlugin
+  inheritance: { type: column_aggregation, extends: sfEasyAuthUser }
+
+sfEasyAuthMember:
+  package: sfEasyAuthDoctrinePlugin
+  inheritance: { type: column_aggregation, extends: sfEasyAuthUser }
+        
+sfEasyAuthUserCredential:
+  package: sfEasyAuthDoctrinePlugin
+  columns:
+    user_id: { type: integer, notnull: true }
+    credential:  { type: string(60), notnull: true }
+    profile_id:  { type: integer, default: 0 }
+  relations:
+    sfEasyAuthUser: { local: user_id, foreign: id }
+  indexes:
+    user_id: { fields: [ user_id ] }
+    profile_id: { fields: [ profile_id ], type: unique }
